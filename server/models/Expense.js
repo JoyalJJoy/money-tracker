@@ -1,36 +1,47 @@
-import db from '../config/database.js';
+import { getDb, saveDb } from '../config/database.js';
 
 const Expense = {
     create(userId, data) {
+        const db = getDb();
         const now = new Date().toISOString();
-        const stmt = db.prepare(`
-      INSERT INTO expenses (userId, title, amount, category, date, notes, createdAt, updatedAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-        const result = stmt.run(
-            userId,
-            data.title,
-            data.amount,
-            data.category,
-            data.date,
-            data.notes || null,
-            now,
-            now
+        db.run(
+            `INSERT INTO expenses (userId, title, amount, category, date, notes, createdAt, updatedAt)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [userId, data.title, data.amount, data.category, data.date, data.notes || null, now, now]
         );
-        return this.findById(result.lastInsertRowid);
+        const id = db.exec('SELECT last_insert_rowid()')[0].values[0][0];
+        saveDb();
+        return this.findById(id);
     },
 
     findById(id) {
+        const db = getDb();
         const stmt = db.prepare('SELECT * FROM expenses WHERE id = ?');
-        return stmt.get(id);
+        stmt.bind([id]);
+        if (stmt.step()) {
+            const row = stmt.getAsObject();
+            stmt.free();
+            return row;
+        }
+        stmt.free();
+        return null;
     },
 
     findByIdAndUser(id, userId) {
+        const db = getDb();
         const stmt = db.prepare('SELECT * FROM expenses WHERE id = ? AND userId = ?');
-        return stmt.get(id, userId);
+        stmt.bind([id, userId]);
+        if (stmt.step()) {
+            const row = stmt.getAsObject();
+            stmt.free();
+            return row;
+        }
+        stmt.free();
+        return null;
     },
 
     findAllByUser(userId, filters = {}) {
+        const db = getDb();
         let query = 'SELECT * FROM expenses WHERE userId = ?';
         const params = [userId];
 
@@ -65,59 +76,68 @@ const Expense = {
         const sortOrder = filters.sortOrder === 'asc' ? 'ASC' : 'DESC';
         query += ` ORDER BY ${sortBy} ${sortOrder}`;
 
+        const results = [];
         const stmt = db.prepare(query);
-        return stmt.all(...params);
+        stmt.bind(params);
+        while (stmt.step()) {
+            results.push(stmt.getAsObject());
+        }
+        stmt.free();
+        return results;
     },
 
     update(id, userId, data) {
+        const db = getDb();
         const now = new Date().toISOString();
-        const stmt = db.prepare(`
-      UPDATE expenses 
-      SET title = ?, amount = ?, category = ?, date = ?, notes = ?, updatedAt = ?
-      WHERE id = ? AND userId = ?
-    `);
-        stmt.run(
-            data.title,
-            data.amount,
-            data.category,
-            data.date,
-            data.notes || null,
-            now,
-            id,
-            userId
+        db.run(
+            `UPDATE expenses 
+       SET title = ?, amount = ?, category = ?, date = ?, notes = ?, updatedAt = ?
+       WHERE id = ? AND userId = ?`,
+            [data.title, data.amount, data.category, data.date, data.notes || null, now, id, userId]
         );
+        saveDb();
         return this.findById(id);
     },
 
     delete(id, userId) {
-        const stmt = db.prepare('DELETE FROM expenses WHERE id = ? AND userId = ?');
-        const result = stmt.run(id, userId);
-        return result.changes > 0;
+        const db = getDb();
+        const existing = this.findByIdAndUser(id, userId);
+        if (!existing) return false;
+        db.run('DELETE FROM expenses WHERE id = ? AND userId = ?', [id, userId]);
+        saveDb();
+        return true;
     },
 
     getSummary(userId) {
+        const db = getDb();
+
         // Total expenses
-        const totalStmt = db.prepare('SELECT SUM(amount) as total FROM expenses WHERE userId = ?');
-        const total = totalStmt.get(userId)?.total || 0;
+        let result = db.exec('SELECT SUM(amount) as total FROM expenses WHERE userId = ?', [userId]);
+        const total = result.length > 0 && result[0].values[0][0] ? result[0].values[0][0] : 0;
 
         // By category
-        const categoryStmt = db.prepare(`
-      SELECT category, SUM(amount) as total, COUNT(*) as count 
-      FROM expenses WHERE userId = ? 
-      GROUP BY category
-    `);
-        const byCategory = categoryStmt.all(userId);
+        result = db.exec(
+            `SELECT category, SUM(amount) as total, COUNT(*) as count 
+       FROM expenses WHERE userId = ? 
+       GROUP BY category`,
+            [userId]
+        );
+        const byCategory = result.length > 0 ? result[0].values.map(row => ({
+            category: row[0],
+            total: row[1],
+            count: row[2]
+        })) : [];
 
         // This month
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-        const monthStmt = db.prepare('SELECT SUM(amount) as total FROM expenses WHERE userId = ? AND date >= ?');
-        const monthlyTotal = monthStmt.get(userId, startOfMonth)?.total || 0;
+        result = db.exec('SELECT SUM(amount) as total FROM expenses WHERE userId = ? AND date >= ?', [userId, startOfMonth]);
+        const monthlyTotal = result.length > 0 && result[0].values[0][0] ? result[0].values[0][0] : 0;
 
         // Today
         const today = now.toISOString().split('T')[0];
-        const todayStmt = db.prepare('SELECT SUM(amount) as total FROM expenses WHERE userId = ? AND date = ?');
-        const dailyTotal = todayStmt.get(userId, today)?.total || 0;
+        result = db.exec('SELECT SUM(amount) as total FROM expenses WHERE userId = ? AND date = ?', [userId, today]);
+        const dailyTotal = result.length > 0 && result[0].values[0][0] ? result[0].values[0][0] : 0;
 
         return {
             total,

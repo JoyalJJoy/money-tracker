@@ -1,25 +1,44 @@
-import db from '../config/database.js';
+import { getDb, saveDb } from '../config/database.js';
 import bcrypt from 'bcryptjs';
 
 const User = {
     findByUsername(username) {
+        const db = getDb();
         const stmt = db.prepare('SELECT * FROM users WHERE username = ?');
-        return stmt.get(username);
+        stmt.bind([username]);
+        if (stmt.step()) {
+            const row = stmt.getAsObject();
+            stmt.free();
+            return row;
+        }
+        stmt.free();
+        return null;
     },
 
     findById(id) {
+        const db = getDb();
         const stmt = db.prepare('SELECT id, username, createdAt, updatedAt FROM users WHERE id = ?');
-        return stmt.get(id);
+        stmt.bind([id]);
+        if (stmt.step()) {
+            const row = stmt.getAsObject();
+            stmt.free();
+            return row;
+        }
+        stmt.free();
+        return null;
     },
 
     create(username, password) {
+        const db = getDb();
         const passwordHash = bcrypt.hashSync(password, 10);
         const now = new Date().toISOString();
-        const stmt = db.prepare(
-            'INSERT INTO users (username, passwordHash, createdAt, updatedAt) VALUES (?, ?, ?, ?)'
+        db.run(
+            'INSERT INTO users (username, passwordHash, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
+            [username, passwordHash, now, now]
         );
-        const result = stmt.run(username, passwordHash, now, now);
-        return { id: result.lastInsertRowid, username };
+        const id = db.exec('SELECT last_insert_rowid()')[0].values[0][0];
+        saveDb();
+        return { id, username };
     },
 
     validatePassword(user, password) {

@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import { initDb } from './config/database.js';
 import authRoutes from './routes/authRoutes.js';
 import expenseRoutes from './routes/expenseRoutes.js';
 import User from './models/User.js';
@@ -45,9 +46,21 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: 'Internal server error' });
 });
 
-// Initialize default user and start server
-User.initializeDefaultUser();
+// Initialize database and start server
+const startServer = async () => {
+    try {
+        await initDb();
+        console.log('Database initialized');
 
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT}`);
-});
+        User.initializeDefaultUser();
+
+        app.listen(PORT, '0.0.0.0', () => {
+            console.log(`Server running on port ${PORT}`);
+        });
+    } catch (error) {
+        console.error('Failed to start server:', error);
+        process.exit(1);
+    }
+};
+
+startServer();
