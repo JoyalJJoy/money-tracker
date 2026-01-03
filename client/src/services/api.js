@@ -52,4 +52,45 @@ export const expensesAPI = {
         api.get('/expenses/summary'),
 };
 
+// Masters API - Categories
+export const categoriesAPI = {
+    getAll: () => api.get('/masters/categories'),
+    create: (data) => api.post('/masters/categories', data),
+    update: (id, data) => api.put(`/masters/categories/${id}`, data),
+    delete: (id) => api.delete(`/masters/categories/${id}`),
+};
+
+// Masters API - SubCategories
+export const subcategoriesAPI = {
+    getAll: () => api.get('/masters/subcategories'),
+    getByCategory: (categoryId) => api.get(`/masters/subcategories/category/${categoryId}`),
+    create: (data) => api.post('/masters/subcategories', data),
+    update: (id, data) => api.put(`/masters/subcategories/${id}`, data),
+    delete: (id) => api.delete(`/masters/subcategories/${id}`),
+};
+
+// Masters API - Platforms
+export const platformsAPI = {
+    getAll: () => api.get('/masters/platforms'),
+    create: (data) => api.post('/masters/platforms', data),
+    update: (id, data) => api.put(`/masters/platforms/${id}`, data),
+    delete: (id) => api.delete(`/masters/platforms/${id}`),
+};
+
+// Masters API - Modes
+export const modesAPI = {
+    getAll: () => api.get('/masters/modes'),
+    create: (data) => api.post('/masters/modes', data),
+    update: (id, data) => api.put(`/masters/modes/${id}`, data),
+    delete: (id) => api.delete(`/masters/modes/${id}`),
+};
+
+// Masters API - Statuses
+export const statusesAPI = {
+    getAll: () => api.get('/masters/statuses'),
+    create: (data) => api.post('/masters/statuses', data),
+    update: (id, data) => api.put(`/masters/statuses/${id}`, data),
+    delete: (id) => api.delete(`/masters/statuses/${id}`),
+};
+
 export default api;

@@ -31,7 +31,9 @@ const initDb = async () => {
   // Enable foreign keys
   db.run('PRAGMA foreign_keys = ON');
 
-  // Initialize tables
+  // =====================
+  // USERS TABLE
+  // =====================
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -42,6 +44,103 @@ const initDb = async () => {
     )
   `);
 
+  // =====================
+  // MASTER TABLES
+  // =====================
+
+  // Categories Master
+  db.run(`
+    CREATE TABLE IF NOT EXISTS categories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userId INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      type TEXT DEFAULT 'Expense',
+      budget REAL,
+      active INTEGER DEFAULT 1,
+      createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
+  // SubCategories Master
+  db.run(`
+    CREATE TABLE IF NOT EXISTS subcategories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      categoryId INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      active INTEGER DEFAULT 1,
+      createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (categoryId) REFERENCES categories(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Platforms Master (Amazon, Swiggy, etc.)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS platforms (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userId INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      active INTEGER DEFAULT 1,
+      createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Modes Master (Cash, UPI, Card, etc.)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS modes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userId INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      active INTEGER DEFAULT 1,
+      createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Statuses Master
+  db.run(`
+    CREATE TABLE IF NOT EXISTS statuses (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userId INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      active INTEGER DEFAULT 1,
+      createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
+  // =====================
+  // TRANSACTIONS TABLE (Enhanced from expenses)
+  // =====================
+  db.run(`
+    CREATE TABLE IF NOT EXISTS transactions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userId INTEGER NOT NULL,
+      type TEXT DEFAULT 'Expense',
+      title TEXT NOT NULL,
+      amount REAL NOT NULL,
+      quantity REAL,
+      unitPrice REAL,
+      categoryId INTEGER,
+      subcategoryId INTEGER,
+      statusId INTEGER,
+      modeId INTEGER,
+      platformId INTEGER,
+      date TEXT NOT NULL,
+      notes TEXT,
+      createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+      updatedAt TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (categoryId) REFERENCES categories(id),
+      FOREIGN KEY (subcategoryId) REFERENCES subcategories(id),
+      FOREIGN KEY (statusId) REFERENCES statuses(id),
+      FOREIGN KEY (modeId) REFERENCES modes(id),
+      FOREIGN KEY (platformId) REFERENCES platforms(id)
+    )
+  `);
+
+  // Keep old expenses table for backward compatibility (will migrate data)
   db.run(`
     CREATE TABLE IF NOT EXISTS expenses (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -57,9 +156,11 @@ const initDb = async () => {
     )
   `);
 
-  db.run('CREATE INDEX IF NOT EXISTS idx_expenses_userId ON expenses(userId)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_expenses_category ON expenses(category)');
+  // Indexes
+  db.run('CREATE INDEX IF NOT EXISTS idx_transactions_userId ON transactions(userId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_transactions_type ON transactions(type)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_categories_userId ON categories(userId)');
 
   // Save database
   saveDb();

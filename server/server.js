@@ -5,7 +5,10 @@ import cookieParser from 'cookie-parser';
 import { initDb } from './config/database.js';
 import authRoutes from './routes/authRoutes.js';
 import expenseRoutes from './routes/expenseRoutes.js';
+import mastersRoutes from './routes/mastersRoutes.js';
 import User from './models/User.js';
+import Category from './models/Category.js';
+import { Platform, Mode, Status } from './models/Masters.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -34,6 +37,7 @@ app.use(cookieParser());
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/expenses', expenseRoutes);
+app.use('/api/masters', mastersRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -46,13 +50,28 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: 'Internal server error' });
 });
 
+// Initialize default data for user
+const initializeUserDefaults = (userId) => {
+    Category.initializeDefaults(userId);
+    Platform.initializeDefaults(userId);
+    Mode.initializeDefaults(userId);
+    Status.initializeDefaults(userId);
+};
+
 // Initialize database and start server
 const startServer = async () => {
     try {
         await initDb();
         console.log('Database initialized');
 
-        User.initializeDefaultUser();
+        const user = User.initializeDefaultUser();
+
+        // Initialize default masters for admin user
+        const adminUser = User.findByUsername('admin');
+        if (adminUser) {
+            initializeUserDefaults(adminUser.id);
+            console.log('Default masters initialized for admin user');
+        }
 
         app.listen(PORT, '0.0.0.0', () => {
             console.log(`Server running on port ${PORT}`);
