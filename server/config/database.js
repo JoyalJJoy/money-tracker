@@ -111,8 +111,81 @@ const initDb = async () => {
   `);
 
   // =====================
-  // TRANSACTIONS TABLE (Enhanced from expenses)
+  // Accounts Master (Bank accounts, wallets, etc.)
   // =====================
+  db.run(`
+    CREATE TABLE IF NOT EXISTS accounts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userId INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      type TEXT DEFAULT 'Bank',
+      balance REAL DEFAULT 0,
+      active INTEGER DEFAULT 1,
+      createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
+  // =====================
+  // MASTER_TRANSACTIONS TABLE (Enhanced from expenses)
+  // Stores all financial transactions with comprehensive fields
+  // =====================
+  db.run(`
+    CREATE TABLE IF NOT EXISTS master_transactions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      transactionId TEXT UNIQUE NOT NULL,
+      userId INTEGER NOT NULL,
+      
+      -- Date and Time Fields
+      date TEXT NOT NULL,
+      week INTEGER NOT NULL,
+      year INTEGER NOT NULL,
+      financialYear TEXT NOT NULL,
+      month TEXT NOT NULL,
+      monthNumber INTEGER NOT NULL,
+      weekdayNumber INTEGER NOT NULL,
+      isWeekend INTEGER NOT NULL DEFAULT 0,
+      
+      -- Transaction Type
+      type TEXT NOT NULL DEFAULT 'Expense' CHECK(type IN ('Income', 'Expense', 'Transfer')),
+      
+      -- Category Information
+      categoryId INTEGER,
+      subcategoryId INTEGER,
+      
+      -- Transaction Details
+      description TEXT NOT NULL,
+      quantity REAL,
+      unitPrice REAL,
+      manualAmount REAL,
+      amount REAL NOT NULL,
+      
+      -- Account and Status
+      accountId INTEGER,
+      statusId INTEGER,
+      modeId INTEGER,
+      platformId INTEGER,
+      
+      -- Additional Information
+      notes TEXT,
+      entryTimestamp TEXT NOT NULL,
+      
+      -- Audit Fields
+      createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+      updatedAt TEXT DEFAULT CURRENT_TIMESTAMP,
+      
+      -- Foreign Keys
+      FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (categoryId) REFERENCES categories(id),
+      FOREIGN KEY (subcategoryId) REFERENCES subcategories(id),
+      FOREIGN KEY (accountId) REFERENCES accounts(id),
+      FOREIGN KEY (statusId) REFERENCES statuses(id),
+      FOREIGN KEY (modeId) REFERENCES modes(id),
+      FOREIGN KEY (platformId) REFERENCES platforms(id)
+    )
+  `);
+
+  // Keep old transactions table for backward compatibility
   db.run(`
     CREATE TABLE IF NOT EXISTS transactions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -156,11 +229,21 @@ const initDb = async () => {
     )
   `);
 
-  // Indexes
+  // Indexes for master_transactions
+  db.run('CREATE INDEX IF NOT EXISTS idx_master_transactions_userId ON master_transactions(userId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_master_transactions_date ON master_transactions(date)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_master_transactions_type ON master_transactions(type)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_master_transactions_year ON master_transactions(year)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_master_transactions_financialYear ON master_transactions(financialYear)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_master_transactions_monthNumber ON master_transactions(monthNumber)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_master_transactions_transactionId ON master_transactions(transactionId)');
+
+  // Legacy indexes
   db.run('CREATE INDEX IF NOT EXISTS idx_transactions_userId ON transactions(userId)');
   db.run('CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date)');
   db.run('CREATE INDEX IF NOT EXISTS idx_transactions_type ON transactions(type)');
   db.run('CREATE INDEX IF NOT EXISTS idx_categories_userId ON categories(userId)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_accounts_userId ON accounts(userId)');
 
   // Save database
   saveDb();

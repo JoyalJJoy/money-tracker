@@ -1,6 +1,6 @@
 import Category from '../models/Category.js';
 import SubCategory from '../models/SubCategory.js';
-import { Platform, Mode, Status } from '../models/Masters.js';
+import { Platform, Mode, Status, Account } from '../models/Masters.js';
 
 // =====================
 // CATEGORIES
@@ -268,6 +268,58 @@ export const deleteStatus = (req, res) => {
         res.json({ message: 'Status deleted' });
     } catch (error) {
         console.error('Delete status error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+// =====================
+// ACCOUNTS
+// =====================
+
+export const getAccounts = (req, res) => {
+    try {
+        const accounts = Account.findAllByUser(req.userId);
+        res.json(accounts);
+    } catch (error) {
+        console.error('Get accounts error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+export const createAccount = (req, res) => {
+    try {
+        const { name, type, balance } = req.body;
+        if (!name) {
+            return res.status(400).json({ error: 'Name is required' });
+        }
+        const account = Account.create(req.userId, { name, type, balance });
+        res.status(201).json(account);
+    } catch (error) {
+        console.error('Create account error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+export const updateAccount = (req, res) => {
+    try {
+        const { name, type, balance } = req.body;
+        if (!name) {
+            return res.status(400).json({ error: 'Name is required' });
+        }
+        const account = Account.update(parseInt(req.params.id), req.userId, { name, type, balance });
+        res.json(account);
+    } catch (error) {
+        console.error('Update account error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+export const deleteAccount = (req, res) => {
+    try {
+        Account.delete(parseInt(req.params.id), req.userId);
+        res.json({ message: 'Account deleted' });
+    } catch (error) {
+        console.error('Delete account error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 };

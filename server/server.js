@@ -6,9 +6,10 @@ import { initDb } from './config/database.js';
 import authRoutes from './routes/authRoutes.js';
 import expenseRoutes from './routes/expenseRoutes.js';
 import mastersRoutes from './routes/mastersRoutes.js';
+import transactionRoutes from './routes/transactionRoutes.js';
 import User from './models/User.js';
 import Category from './models/Category.js';
-import { Platform, Mode, Status } from './models/Masters.js';
+import { Platform, Mode, Status, Account } from './models/Masters.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -38,6 +39,7 @@ app.use(cookieParser());
 app.use('/api/auth', authRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/masters', mastersRoutes);
+app.use('/api/transactions', transactionRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -56,6 +58,7 @@ const initializeUserDefaults = (userId) => {
     Platform.initializeDefaults(userId);
     Mode.initializeDefaults(userId);
     Status.initializeDefaults(userId);
+    Account.initializeDefaults(userId);
 };
 
 // Initialize database and start server

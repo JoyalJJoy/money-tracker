@@ -5,7 +5,8 @@ import {
     getSubCategories, getSubCategoriesByCategory, createSubCategory, updateSubCategory, deleteSubCategory,
     getPlatforms, createPlatform, updatePlatform, deletePlatform,
     getModes, createMode, updateMode, deleteMode,
-    getStatuses, createStatus, updateStatus, deleteStatus
+    getStatuses, createStatus, updateStatus, deleteStatus,
+    getAccounts, createAccount, updateAccount, deleteAccount
 } from '../controllers/mastersController.js';
 
 const router = express.Router();
@@ -44,4 +45,11 @@ router.post('/statuses', createStatus);
 router.put('/statuses/:id', updateStatus);
 router.delete('/statuses/:id', deleteStatus);
 
+// Accounts
+router.get('/accounts', getAccounts);
+router.post('/accounts', createAccount);
+router.put('/accounts/:id', updateAccount);
+router.delete('/accounts/:id', deleteAccount);
+
 export default router;
+
