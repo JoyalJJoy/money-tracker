@@ -1,0 +1,14 @@
+{
+  "name": "money-tracker",
+  "version": "1.0.0",
+  "description": "Money Tracking Web App - Track your expenses locally",
+  "scripts": {
+    "install:all": "cd server && npm install && cd ../client && npm install",
+    "start": "concurrently \"cd server && npm run dev\" \"cd client && npm run dev\"",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm run dev"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
