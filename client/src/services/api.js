@@ -93,4 +93,47 @@ export const statusesAPI = {
     delete: (id) => api.delete(`/masters/statuses/${id}`),
 };
 
+// Masters API - Accounts
+export const accountsAPI = {
+    getAll: () => api.get('/masters/accounts'),
+    create: (data) => api.post('/masters/accounts', data),
+    update: (id, data) => api.put(`/masters/accounts/${id}`, data),
+    delete: (id) => api.delete(`/masters/accounts/${id}`),
+};
+
+// Master Transactions API
+export const transactionsAPI = {
+    getAll: (filters = {}) => {
+        const params = new URLSearchParams();
+        Object.keys(filters).forEach(key => {
+            if (filters[key] !== undefined && filters[key] !== null) {
+                params.append(key, filters[key]);
+            }
+        });
+        return api.get(`/transactions?${params.toString()}`);
+    },
+
+    getById: (id) => api.get(`/transactions/${id}`),
+
+    getByTxnId: (txnId) => api.get(`/transactions/txn/${txnId}`),
+
+    create: (data) => api.post('/transactions', data),
+
+    bulkCreate: (transactions) => api.post('/transactions/bulk', { transactions }),
+
+    update: (id, data) => api.put(`/transactions/${id}`, data),
+
+    delete: (id) => api.delete(`/transactions/${id}`),
+
+    getSummary: (filters = {}) => {
+        const params = new URLSearchParams();
+        Object.keys(filters).forEach(key => {
+            if (filters[key] !== undefined && filters[key] !== null) {
+                params.append(key, filters[key]);
+            }
+        });
+        return api.get(`/transactions/summary?${params.toString()}`);
+    },
+};
+
 export default api;

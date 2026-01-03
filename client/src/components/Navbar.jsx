@@ -13,6 +13,7 @@ const Navbar = () => {
 
     const navLinks = [
         { path: '/dashboard', label: 'Dashboard', icon: '📊' },
+        { path: '/transactions', label: 'Master Sheet', icon: '📑' },
         { path: '/settings', label: 'Settings', icon: '⚙️' },
     ];
 
@@ -41,8 +42,8 @@ const Navbar = () => {
                                     key={link.path}
                                     onClick={() => navigate(link.path)}
                                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${location.pathname === link.path
-                                            ? 'bg-indigo-500/20 text-indigo-400'
-                                            : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                                        ? 'bg-indigo-500/20 text-indigo-400'
+                                        : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
                                         }`}
                                 >
                                     <span className="mr-1">{link.icon}</span>
